@@ -50,16 +50,16 @@ public class IndexCreator implements CommandLineRunner {
     	initializeTeamCache();
     	
     	//TODO get the correct list of tickets with a query
-//    	List<JiraIssue> tickets2Report = getRelevantTimesheetTickets();
-//        
-//    	// iterate over all the tickets we are interested in and get the worklog information
-//        for(JiraIssue ticket: tickets2Report) {
-//        	log.debug("creating json documents for ticket: " + ticket.getKey());
-//           
-//        	List<String> jsonDocumentsForTicket = getJSonDocumentsForTicket(ticket);
-//            log.debug("creating el-index for ticket: " + ticket);
-//        	createIndexForDocuments(jsonDocumentsForTicket);
-//        } 
+    	List<JiraIssue> tickets2Report = getRelevantTimesheetTickets();
+        
+    	// iterate over all the tickets we are interested in and get the worklog information
+        for(JiraIssue ticket: tickets2Report) {
+        	log.debug("creating json documents for ticket: " + ticket.getKey());
+           
+        	List<String> jsonDocumentsForTicket = getJSonDocumentsForTicket(ticket);
+            log.debug("creating el-index for ticket: " + ticket);
+        	createIndexForDocuments(jsonDocumentsForTicket);
+        } 
         System.exit(0);
     }
 
