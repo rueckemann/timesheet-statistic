@@ -17,11 +17,11 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 import de.codecentric.jira.JiraClient;
 import de.codecentric.jira.TimesheetConfig;
+import de.codecentric.jira.restapi.Author;
 import de.codecentric.jira.restapi.JiraIssue;
 import de.codecentric.jira.restapi.JiraIssueContainer;
 import de.codecentric.jira.restapi.Team;
 import de.codecentric.jira.restapi.TeamMember;
-import de.codecentric.jira.restapi.Author;
 import de.codecentric.jira.restapi.Worklog;
 import de.codecentric.jira.restapi.WorklogContainer;
 
@@ -50,13 +50,8 @@ public class IndexCreator implements CommandLineRunner {
     	
     	List<JiraIssue> tickets2Report = getRelevantTimesheetTickets();
         
-    	// iterate over all the tickets we are interested in and get the worklog information
         for(JiraIssue ticket: tickets2Report) {
-        	log.debug("creating json documents for ticket: " + ticket.getKey());
-        	List<String> jsonDocumentsForTicket = getJSonDocumentsForTicket(ticket);
-           
-        	log.debug("creating el-index entries for ticket: " + ticket);
-        	createIndexForDocuments(jsonDocumentsForTicket);
+        	createIndexForDocuments(getJSonDocumentsForTicket(ticket));
         } 
         System.exit(0);
     }
@@ -91,6 +86,7 @@ public class IndexCreator implements CommandLineRunner {
 		ObjectMapper mapper = new ObjectMapper();
 		WorklogContainer worklogContainer = jiraClient.getWorklogs(ticket.getKey());
 		List<Worklog> worklogs = worklogContainer.getWorklogs();
+		log.debug("adding " + worklogs.size() + " index entries for ticket " + ticket.getKey());
 		for (Worklog worklog : worklogs) {
 		    try {
 		    	fixAuthorInWorklog(worklog);
@@ -101,7 +97,7 @@ public class IndexCreator implements CommandLineRunner {
 		    	IndexEntry indexEntry = new IndexEntry(ticket, worklog, team);		    	
 		    	String jsonDocument = mapper.writeValueAsString(indexEntry);
 		    	jsonDocuments.add(jsonDocument);
-		    	System.out.println(jsonDocument);
+		    	//System.out.println(jsonDocument);
 		    
 			} catch (JsonProcessingException e) {
 				e.printStackTrace();
