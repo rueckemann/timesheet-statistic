@@ -4,7 +4,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.apache.log4j.Logger;
-import org.elasticsearch.action.index.IndexResponse;
 import org.elasticsearch.client.Client;
 import org.elasticsearch.node.Node;
 import org.elasticsearch.node.NodeBuilder;
@@ -49,15 +48,14 @@ public class IndexCreator implements CommandLineRunner {
     	log.debug("initializing team cache");
     	initializeTeamCache();
     	
-    	//TODO get the correct list of tickets with a query
     	List<JiraIssue> tickets2Report = getRelevantTimesheetTickets();
         
     	// iterate over all the tickets we are interested in and get the worklog information
         for(JiraIssue ticket: tickets2Report) {
         	log.debug("creating json documents for ticket: " + ticket.getKey());
-           
         	List<String> jsonDocumentsForTicket = getJSonDocumentsForTicket(ticket);
-            log.debug("creating el-index for ticket: " + ticket);
+           
+        	log.debug("creating el-index entries for ticket: " + ticket);
         	createIndexForDocuments(jsonDocumentsForTicket);
         } 
         System.exit(0);
@@ -68,6 +66,10 @@ public class IndexCreator implements CommandLineRunner {
 		for (Team team : teams) {
 			List<TeamMember> userForTeam = jiraClient.getMembersForTeam(team);
 			for (TeamMember teamMember : userForTeam) {
+				String userName = teamMember.getMember().getName();
+				if(teamCache.containsUser(userName)) {
+					log.warn("User: " + userName + " is in member of multiple teams: " + teamCache.getTeamForMember(userName) + ", " + team.getName());
+				}
 				teamCache.addMember(teamMember.getMember().getName(), team.getName());
 			}
 		}
@@ -99,7 +101,7 @@ public class IndexCreator implements CommandLineRunner {
 		    	IndexEntry indexEntry = new IndexEntry(ticket, worklog, team);		    	
 		    	String jsonDocument = mapper.writeValueAsString(indexEntry);
 		    	jsonDocuments.add(jsonDocument);
-		    	//System.out.println(jsonDocument);
+		    	System.out.println(jsonDocument);
 		    
 			} catch (JsonProcessingException e) {
 				e.printStackTrace();
@@ -121,8 +123,25 @@ public class IndexCreator implements CommandLineRunner {
 	}
 
 	private List<JiraIssue> getRelevantTimesheetTickets() {
-		JiraIssueContainer ticketsByJql = jiraClient.getTicketsByJql("issuekey in (TIMXIII-1673,TIMXIII-1674,TIMXIII-1675)");
-		return ticketsByJql.getIssues();
+		//TODO: get jql from properties file
+		String jql = "project = \"Timesheet \" AND component not in (codecentric, \"codecentric AG\")";
+		List<JiraIssue> result = new ArrayList<JiraIssue>();
+		int currentIndex = 0;
+		
+		JiraIssueContainer issueContainer = jiraClient.getTicketsByJql(jql, currentIndex);
+		log.debug("evaluating a total of  " + issueContainer.getTotal() + " timesheet tickets");
+		result.addAll(issueContainer.getIssues());
+		
+		//TODO: pagenagion does not make sense when we store all issues in the result, maybe use a callback 
+		while(currentIndex + issueContainer.getMaxResults() < issueContainer.getTotal()) {			
+			currentIndex += issueContainer.getMaxResults();
+			issueContainer = jiraClient.getTicketsByJql(jql, currentIndex);
+			log.debug("evaluation IssueContainer: " + issueContainer);
+			result.addAll(issueContainer.getIssues());
+		}
+		
+		log.debug("Query contains " + issueContainer.getTotal() + " returning " + result.size() + " issues");
+		return result;
 	}
-
+	
 }

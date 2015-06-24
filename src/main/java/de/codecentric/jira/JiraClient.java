@@ -22,7 +22,7 @@ public class JiraClient {
     private static final String JIRA_RESTAPI_USER_PER_KEY = "/rest/api/2/user?key={userKey}";
     private static final String TEMPO_TEAMS_API = "/rest/tempo-teams/1/team/";
     private static final String TEMPO_TEAM_MEMBERS = "/rest/tempo-teams/2/team/{teamId}/member";
-    private static final String JIRA_JQL_SEARCH = "/rest/api/2/search?jql={jql}";
+    private static final String JIRA_JQL_SEARCH = "/rest/api/2/search?jql={jql}&startAt={startIndex}";
     
     
     private String jiraUrl;
@@ -48,9 +48,9 @@ public class JiraClient {
         return worklogContainer;
     }
     
-    public JiraIssueContainer getTicketsByJql(String jql) {
+    public JiraIssueContainer getTicketsByJql(String jql, int startIndex) {
         RestTemplate restTemplate = new RestTemplate();
-        ResponseEntity<JiraIssueContainer> response = restTemplate.exchange(jiraUrl + JIRA_JQL_SEARCH, HttpMethod.GET, generateAuthRequest(), JiraIssueContainer.class, jql);
+        ResponseEntity<JiraIssueContainer> response = restTemplate.exchange(jiraUrl + JIRA_JQL_SEARCH, HttpMethod.GET, generateAuthRequest(), JiraIssueContainer.class, jql, startIndex);
         JiraIssueContainer issueContainer = response.getBody();
         return issueContainer;
     }

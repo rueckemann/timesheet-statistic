@@ -7,33 +7,33 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class JiraIssueContainer {
 
-    private String maxResults;
-    private String startAt;
-    private String total;
+    private Integer maxResults;
+    private Integer startAt;
+    private Integer total;
     private List<JiraIssue> issues;
 
 
-    public String getMaxResults() {
+    public Integer getMaxResults() {
         return maxResults;
     }
 
-    public void setMaxResults(String maxResults) {
+    public void setMaxResults(Integer maxResults) {
         this.maxResults = maxResults;
     }
 
-    public String getStartAt() {
+    public Integer getStartAt() {
         return startAt;
     }
 
-    public void setStartAt(String startAt) {
+    public void setStartAt(Integer startAt) {
         this.startAt = startAt;
     }
 
-    public String getTotal() {
+    public Integer getTotal() {
         return total;
     }
 
-    public void setTotal(String total) {
+    public void setTotal(Integer total) {
         this.total = total;
     }
 
@@ -43,6 +43,12 @@ public class JiraIssueContainer {
 
 	public void setIssues(List<JiraIssue> issues) {
 		this.issues = issues;
+	}
+
+	@Override
+	public String toString() {
+		return "JiraIssueContainer [maxResults=" + maxResults + ", startAt=" + startAt + ", total=" + total
+				+ ", issues=" + issues + "]";
 	}
 
 }

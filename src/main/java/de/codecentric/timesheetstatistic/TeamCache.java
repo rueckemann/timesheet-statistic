@@ -22,4 +22,8 @@ public class TeamCache {
 		return teamMap.getOrDefault(member, UNDEFINED_TEAM);
 	}
 	
+	public boolean containsUser(String user) {
+		return teamMap.containsKey(user);
+	}
+	
 }
