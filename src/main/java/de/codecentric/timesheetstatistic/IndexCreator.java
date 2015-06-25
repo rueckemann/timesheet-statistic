@@ -1,10 +1,15 @@
 package de.codecentric.timesheetstatistic;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
 import org.apache.log4j.Logger;
+import org.elasticsearch.action.admin.indices.create.CreateIndexRequest;
+import org.elasticsearch.action.admin.indices.exists.indices.IndicesExistsRequest;
 import org.elasticsearch.client.Client;
+import org.elasticsearch.common.xcontent.XContentBuilder;
+import org.elasticsearch.common.xcontent.XContentFactory;
 import org.elasticsearch.node.Node;
 import org.elasticsearch.node.NodeBuilder;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -28,6 +33,10 @@ import de.codecentric.jira.restapi.WorklogContainer;
 @Import(TimesheetConfig.class)
 public class IndexCreator implements CommandLineRunner {
 
+	private static final String EL_INDEX_TYPE = "worklog";
+
+	private static final String EL_INDEX_NAME = "timesheet_entry";
+
 	private static Logger log = Logger.getLogger(IndexCreator.class);
 	
 	@Autowired
@@ -50,11 +59,40 @@ public class IndexCreator implements CommandLineRunner {
     	
     	List<JiraIssue> tickets2Report = getRelevantTimesheetTickets();
         
+    	createElIndex();
         for(JiraIssue ticket: tickets2Report) {
         	createIndexForDocuments(getJSonDocumentsForTicket(ticket));
         } 
         System.exit(0);
     }
+
+	private void createElIndex() {
+		Node node = NodeBuilder.nodeBuilder().client(true).node();
+    	Client client = node.client();
+    	
+    	if(!client.admin().indices().exists(new IndicesExistsRequest(EL_INDEX_NAME)).actionGet().isExists()) {
+    		client.admin().indices().create(new CreateIndexRequest(EL_INDEX_NAME).mapping(EL_INDEX_TYPE, getTypeMapping())).actionGet();
+    	}
+	}
+	
+	private XContentBuilder getTypeMapping() {
+		XContentBuilder builder = null;
+		try {
+			builder = XContentFactory.jsonBuilder().startObject().startObject(EL_INDEX_TYPE)
+					.startObject("properties");
+			builder.startObject("authorDisplayName").field("type", "string").field("index", "not_analyzed").endObject();
+			builder.startObject("authorName").field("type", "string").field("index", "not_analyzed").endObject();
+			builder.startObject("comment").field("type", "string").field("index", "not_analyzed").endObject();
+			builder.startObject("component").field("type", "string").field("index", "not_analyzed").endObject();
+			builder.startObject("team").field("type", "string").field("index", "not_analyzed").endObject();
+
+			builder.endObject().endObject().endObject();
+		} catch (IOException e) {
+			log.error("Unable to create index field configuration:", e);
+		}
+		return builder;
+
+	}
 
 	private void initializeTeamCache() {
 		List<Team> teams = jiraClient.getTeams();
@@ -73,8 +111,9 @@ public class IndexCreator implements CommandLineRunner {
 	private void createIndexForDocuments(List<String> jsonDocumentsForTicket) {
 		Node node = NodeBuilder.nodeBuilder().client(true).node();
     	Client client = node.client();
+    	
     	for (String document : jsonDocumentsForTicket) {
-    		client.prepareIndex("timesheet_entry", "worklog").setSource(document).execute().actionGet();
+    		client.prepareIndex(EL_INDEX_NAME, EL_INDEX_TYPE).setSource(document).execute().actionGet();
 		}
     	client.close();
     	node.close();
