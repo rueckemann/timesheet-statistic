@@ -20,6 +20,7 @@ import org.springframework.context.annotation.Import;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import de.codecentric.elasticsearch.ElasticSearchClient;
 import de.codecentric.jira.JiraClient;
 import de.codecentric.jira.TimesheetConfig;
 import de.codecentric.jira.restapi.Author;
@@ -41,6 +42,9 @@ public class IndexCreator implements CommandLineRunner {
 	
 	@Autowired
     private JiraClient jiraClient;
+	
+	@Autowired
+    private ElasticSearchClient elClient;
     
     @Autowired
     TeamCache teamCache;
@@ -101,7 +105,7 @@ public class IndexCreator implements CommandLineRunner {
 			for (TeamMember teamMember : userForTeam) {
 				String userName = teamMember.getMember().getName();
 				if(teamCache.containsUser(userName)) {
-					log.warn("User: " + userName + " is in member of multiple teams: " + teamCache.getTeamForMember(userName) + ", " + team.getName());
+					log.warn("User: " + userName + " is member of multiple teams: " + teamCache.getTeamForMember(userName) + ", " + team.getName());
 				}
 				teamCache.addMember(teamMember.getMember().getName(), team.getName());
 			}
